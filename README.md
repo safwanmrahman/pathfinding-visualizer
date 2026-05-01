@@ -27,6 +27,26 @@ Then open the local Vite URL in your browser.
 - Live demo: coming soon
 - Local demo: run `npm run dev`
 
+## Project Structure
+
+```text
+pathfinding-visualizer/
+├── assets/
+│   └── pathfinding-visualizer-demo.png
+├── src/
+│   ├── algorithms.js
+│   ├── App.jsx
+│   ├── grid.js
+│   ├── main.jsx
+│   └── styles.css
+├── .gitignore
+├── index.html
+├── LICENSE
+├── package.json
+├── package-lock.json
+└── README.md
+```
+
 ## Controls
 
 - Choose an algorithm from the dropdown
