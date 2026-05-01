@@ -12,6 +12,7 @@
   --start: #1f8a70;
   --target: #d94841;
   --wall: #2b3440;
+  --weight: #7658b6;
   --visited: #86b9cb;
   --path: #f0bd4f;
   --shadow: 0 18px 40px rgba(72, 56, 37, 0.12);
@@ -150,6 +151,24 @@ input[type='range'] {
   min-width: 220px;
 }
 
+.toggle-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 52px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+}
+
+.toggle-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -182,6 +201,10 @@ input[type='range'] {
 
 .legend-swatch.wall {
   background: var(--wall);
+}
+
+.legend-swatch.weight {
+  background: var(--weight);
 }
 
 .legend-swatch.visited {
@@ -221,6 +244,10 @@ input[type='range'] {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.info-note {
+  margin-top: 0.7rem !important;
 }
 
 .info-label {
@@ -334,6 +361,12 @@ input[type='range'] {
   background: var(--wall);
 }
 
+.cell-weight {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 45%),
+    var(--weight);
+}
+
 .cell-visited {
   background: var(--visited);
   animation: visit-pop 180ms ease;
@@ -389,6 +422,11 @@ input[type='range'] {
     min-width: min(100%, 260px);
   }
 
+  .toggle-field {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .complexity-list {
     grid-template-columns: 1fr;
   }
@@ -415,8 +453,13 @@ input[type='range'] {
 
   .controls-row button,
   .field,
-  .field select {
+  .field select,
+  .toggle-field {
     width: 100%;
+  }
+
+  .field-range {
+    min-width: 100%;
   }
 
   .hero h1 {

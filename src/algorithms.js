@@ -2,7 +2,16 @@ function getNodeKey(node) {
   return `${node.row}-${node.col}`;
 }
 
-function getNeighbors(grid, node) {
+function isInBounds(grid, row, col) {
+  return row >= 0 && row < grid.length && col >= 0 && col < grid[0].length;
+}
+
+function isWalkable(grid, row, col) {
+  return isInBounds(grid, row, col) && !grid[row][col].isWall;
+}
+
+function getNeighbors(grid, node, options = {}) {
+  const { allowDiagonal = false } = options;
   const neighbors = [];
   const { row, col } = node;
 
@@ -10,6 +19,27 @@ function getNeighbors(grid, node) {
   if (row < grid.length - 1) neighbors.push(grid[row + 1][col]);
   if (col > 0) neighbors.push(grid[row][col - 1]);
   if (col < grid[0].length - 1) neighbors.push(grid[row][col + 1]);
+
+  if (allowDiagonal) {
+    const diagonals = [
+      { row: row - 1, col: col - 1, checks: [{ row: row - 1, col }, { row, col: col - 1 }] },
+      { row: row - 1, col: col + 1, checks: [{ row: row - 1, col }, { row, col: col + 1 }] },
+      { row: row + 1, col: col - 1, checks: [{ row: row + 1, col }, { row, col: col - 1 }] },
+      { row: row + 1, col: col + 1, checks: [{ row: row + 1, col }, { row, col: col + 1 }] },
+    ];
+
+    for (const diagonal of diagonals) {
+      if (!isWalkable(grid, diagonal.row, diagonal.col)) {
+        continue;
+      }
+
+      const canCutCorner = diagonal.checks.every((check) => isWalkable(grid, check.row, check.col));
+
+      if (canCutCorner) {
+        neighbors.push(grid[diagonal.row][diagonal.col]);
+      }
+    }
+  }
 
   return neighbors.filter((neighbor) => !neighbor.isWall);
 }
@@ -31,7 +61,7 @@ function emptyResult() {
   return { visitedOrder: [], path: [] };
 }
 
-export function bfs(grid, start, target) {
+export function bfs(grid, start, target, options = {}) {
   const visitedOrder = [];
   const queue = [start];
   const seen = new Set([getNodeKey(start)]);
@@ -48,7 +78,7 @@ export function bfs(grid, start, target) {
       };
     }
 
-    for (const neighbor of getNeighbors(grid, current)) {
+    for (const neighbor of getNeighbors(grid, current, options)) {
       const neighborKey = getNodeKey(neighbor);
 
       if (seen.has(neighborKey)) {
@@ -64,7 +94,7 @@ export function bfs(grid, start, target) {
   return emptyResult();
 }
 
-export function dfs(grid, start, target) {
+export function dfs(grid, start, target, options = {}) {
   const visitedOrder = [];
   const stack = [start];
   const seen = new Set();
@@ -88,7 +118,7 @@ export function dfs(grid, start, target) {
       };
     }
 
-    const neighbors = getNeighbors(grid, current).reverse();
+    const neighbors = getNeighbors(grid, current, options).reverse();
 
     for (const neighbor of neighbors) {
       const neighborKey = getNodeKey(neighbor);
@@ -108,7 +138,7 @@ export function dfs(grid, start, target) {
   return emptyResult();
 }
 
-export function dijkstra(grid, start, target) {
+export function dijkstra(grid, start, target, options = {}) {
   const visitedOrder = [];
   const distances = new Map();
   const previous = new Map();
@@ -152,9 +182,9 @@ export function dijkstra(grid, start, target) {
       };
     }
 
-    for (const neighbor of getNeighbors(grid, current)) {
+    for (const neighbor of getNeighbors(grid, current, options)) {
       const neighborKey = getNodeKey(neighbor);
-      const nextDistance = distances.get(currentKey) + 1;
+      const nextDistance = distances.get(currentKey) + neighbor.weight;
 
       if (nextDistance < distances.get(neighborKey)) {
         distances.set(neighborKey, nextDistance);
@@ -166,11 +196,19 @@ export function dijkstra(grid, start, target) {
   return emptyResult();
 }
 
-function manhattanDistance(node, target) {
-  return Math.abs(node.row - target.row) + Math.abs(node.col - target.col);
+function estimateDistance(node, target, allowDiagonal) {
+  const rowDistance = Math.abs(node.row - target.row);
+  const colDistance = Math.abs(node.col - target.col);
+
+  if (allowDiagonal) {
+    return Math.max(rowDistance, colDistance);
+  }
+
+  return rowDistance + colDistance;
 }
 
-export function aStar(grid, start, target) {
+export function aStar(grid, start, target, options = {}) {
+  const { allowDiagonal = false } = options;
   const visitedOrder = [];
   const openSet = [start];
   const openKeys = new Set([getNodeKey(start)]);
@@ -188,7 +226,7 @@ export function aStar(grid, start, target) {
   }
 
   gScore.set(getNodeKey(start), 0);
-  fScore.set(getNodeKey(start), manhattanDistance(start, target));
+  fScore.set(getNodeKey(start), estimateDistance(start, target, allowDiagonal));
 
   while (openSet.length > 0) {
     openSet.sort((a, b) => fScore.get(getNodeKey(a)) - fScore.get(getNodeKey(b)));
@@ -211,14 +249,14 @@ export function aStar(grid, start, target) {
       };
     }
 
-    for (const neighbor of getNeighbors(grid, current)) {
+    for (const neighbor of getNeighbors(grid, current, options)) {
       const neighborKey = getNodeKey(neighbor);
 
       if (closed.has(neighborKey)) {
         continue;
       }
 
-      const tentativeGScore = gScore.get(currentKey) + 1;
+      const tentativeGScore = gScore.get(currentKey) + neighbor.weight;
 
       if (tentativeGScore >= gScore.get(neighborKey)) {
         continue;
@@ -226,7 +264,7 @@ export function aStar(grid, start, target) {
 
       previous.set(neighborKey, currentKey);
       gScore.set(neighborKey, tentativeGScore);
-      fScore.set(neighborKey, tentativeGScore + manhattanDistance(neighbor, target));
+      fScore.set(neighborKey, tentativeGScore + estimateDistance(neighbor, target, allowDiagonal));
 
       if (!openKeys.has(neighborKey)) {
         openSet.push(neighbor);
@@ -242,7 +280,7 @@ export const algorithms = {
   bfs: {
     label: 'Breadth-First Search',
     run: bfs,
-    summary: 'Explores the grid level by level and guarantees the shortest path on an unweighted grid.',
+    summary: 'Explores the grid level by level and guarantees the shortest path when every move has the same cost.',
     shortestPathGuarantee: 'Yes',
     timeComplexity: 'O(V + E)',
     spaceComplexity: 'O(V)',
@@ -258,7 +296,7 @@ export const algorithms = {
   dijkstra: {
     label: "Dijkstra's Algorithm",
     run: dijkstra,
-    summary: 'Always expands the lowest-cost frontier first and guarantees the shortest path when edge costs are non-negative.',
+    summary: 'Always expands the lowest-cost frontier first and guarantees the shortest path when edge costs are non-negative, including weighted nodes.',
     shortestPathGuarantee: 'Yes',
     timeComplexity: 'O(V^2)',
     spaceComplexity: 'O(V)',
@@ -266,7 +304,7 @@ export const algorithms = {
   astar: {
     label: 'A* Search',
     run: aStar,
-    summary: 'Uses path cost plus a heuristic to guide the search toward the goal while still finding the shortest path on this grid.',
+    summary: 'Uses path cost plus a heuristic to guide the search toward the goal while still finding the shortest path on this weighted grid.',
     shortestPathGuarantee: 'Yes',
     timeComplexity: 'O(V^2)',
     spaceComplexity: 'O(V)',
