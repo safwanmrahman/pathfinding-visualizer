@@ -60,6 +60,8 @@ pathfinding-visualizer/
 - The implementation focuses on correctness and readability over optimization
 - Dijkstra and A* currently use uniform movement cost on the grid
 - The app is ready for deployment on Vercel or Netlify as a standard Vite project
+- The UI includes algorithm descriptions, shortest-path guarantees, and complexity details
+- The layout is tuned for both desktop and smaller mobile screens
 
 ## Future Improvements
 
@@ -68,6 +70,4 @@ pathfinding-visualizer/
 - Add speed controls
 - Add diagonal movement as an optional setting
 - Add step-by-step execution controls
-- Improve mobile responsiveness for smaller screens
-- Add algorithm descriptions and complexity details in the UI
 - Add unit tests for grid utilities and pathfinding algorithms

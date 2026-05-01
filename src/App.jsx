@@ -317,9 +317,20 @@ function App() {
             <p className="info-label">Algorithm Overview</p>
             <h2>{selectedAlgorithm.label}</h2>
             <p>{selectedAlgorithm.summary}</p>
-            <p className="info-meta">
-              Shortest path guarantee: {selectedAlgorithm.shortestPathGuarantee}
-            </p>
+            <dl className="complexity-list info-meta">
+              <div>
+                <dt>Shortest path</dt>
+                <dd>{selectedAlgorithm.shortestPathGuarantee}</dd>
+              </div>
+              <div>
+                <dt>Time complexity</dt>
+                <dd>{selectedAlgorithm.timeComplexity}</dd>
+              </div>
+              <div>
+                <dt>Space complexity</dt>
+                <dd>{selectedAlgorithm.spaceComplexity}</dd>
+              </div>
+            </dl>
           </article>
 
           <article className="info-card">
