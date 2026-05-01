@@ -242,17 +242,25 @@ export const algorithms = {
   bfs: {
     label: 'Breadth-First Search',
     run: bfs,
+    summary: 'Explores the grid level by level and guarantees the shortest path on an unweighted grid.',
+    shortestPathGuarantee: 'Yes',
   },
   dfs: {
     label: 'Depth-First Search',
     run: dfs,
+    summary: 'Follows one branch as far as it can before backtracking, which makes it fast to explore but not shortest-path optimal.',
+    shortestPathGuarantee: 'No',
   },
   dijkstra: {
     label: "Dijkstra's Algorithm",
     run: dijkstra,
+    summary: 'Always expands the lowest-cost frontier first and guarantees the shortest path when edge costs are non-negative.',
+    shortestPathGuarantee: 'Yes',
   },
   astar: {
     label: 'A* Search',
     run: aStar,
+    summary: 'Uses path cost plus a heuristic to guide the search toward the goal while still finding the shortest path on this grid.',
+    shortestPathGuarantee: 'Yes',
   },
 };

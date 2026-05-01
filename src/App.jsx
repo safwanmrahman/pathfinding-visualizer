@@ -12,6 +12,12 @@ import {
 
 const VISIT_DELAY_MS = 12;
 const PATH_DELAY_MS = 35;
+const DEFAULT_STATS = {
+  visitedNodes: 0,
+  pathLength: 0,
+  completedRuns: 0,
+  lastAlgorithm: 'None yet',
+};
 
 function sleep(delay) {
   return new Promise((resolve) => {
@@ -28,6 +34,8 @@ function App() {
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [dragMode, setDragMode] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
+  const [runStats, setRunStats] = useState(DEFAULT_STATS);
   const [statusMessage, setStatusMessage] = useState(
     'Draw walls, drag the start/target nodes, then visualize an algorithm.',
   );
@@ -43,6 +51,7 @@ function App() {
   }, []);
 
   const algorithmOptions = useMemo(() => Object.entries(algorithms), []);
+  const selectedAlgorithm = algorithms[algorithmKey];
 
   function clearPath() {
     animationRunIdRef.current += 1;
@@ -57,6 +66,7 @@ function App() {
     setGrid(createGrid(DEFAULT_START, DEFAULT_TARGET));
     setStartNode(DEFAULT_START);
     setTargetNode(DEFAULT_TARGET);
+    setRunStats(DEFAULT_STATS);
     setStatusMessage('Board reset to the default layout.');
   }
 
@@ -133,6 +143,9 @@ function App() {
   }
 
   async function animateSearch(visitedOrder, path, runId) {
+    const visitDelay = Math.max(4, Math.round(VISIT_DELAY_MS / speedMultiplier));
+    const pathDelay = Math.max(10, Math.round(PATH_DELAY_MS / speedMultiplier));
+
     for (const node of visitedOrder) {
       if (animationRunIdRef.current !== runId) {
         return false;
@@ -144,7 +157,7 @@ function App() {
           nextGrid[node.row][node.col].isVisited = true;
           return nextGrid;
         });
-        await sleep(VISIT_DELAY_MS);
+        await sleep(visitDelay);
       }
     }
 
@@ -159,7 +172,7 @@ function App() {
           nextGrid[node.row][node.col].isPath = true;
           return nextGrid;
         });
-        await sleep(PATH_DELAY_MS);
+        await sleep(pathDelay);
       }
     }
 
@@ -190,12 +203,24 @@ function App() {
     }
 
     if (path.length > 0) {
+      setRunStats((currentStats) => ({
+        visitedNodes: visitedOrder.length,
+        pathLength: Math.max(path.length - 1, 0),
+        completedRuns: currentStats.completedRuns + 1,
+        lastAlgorithm: algorithm.label,
+      }));
       setStatusMessage(
         `${algorithm.label} found a path with ${Math.max(path.length - 1, 0)} steps after visiting ${
           visitedOrder.length
         } nodes.`,
       );
     } else {
+      setRunStats((currentStats) => ({
+        visitedNodes: visitedOrder.length,
+        pathLength: 0,
+        completedRuns: currentStats.completedRuns + 1,
+        lastAlgorithm: algorithm.label,
+      }));
       setStatusMessage(`${algorithm.label} could not reach the target node.`);
     }
 
@@ -230,6 +255,19 @@ function App() {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className="field field-range">
+            <span>Animation Speed: {speedMultiplier.toFixed(1)}x</span>
+            <input
+              type="range"
+              min="0.5"
+              max="3"
+              step="0.5"
+              value={speedMultiplier}
+              onChange={(event) => setSpeedMultiplier(Number(event.target.value))}
+              disabled={isAnimating}
+            />
           </label>
 
           <button onClick={visualizeAlgorithm} disabled={isAnimating}>
@@ -273,6 +311,39 @@ function App() {
         </div>
 
         <p className="status">{statusMessage}</p>
+
+        <div className="info-grid">
+          <article className="info-card">
+            <p className="info-label">Algorithm Overview</p>
+            <h2>{selectedAlgorithm.label}</h2>
+            <p>{selectedAlgorithm.summary}</p>
+            <p className="info-meta">
+              Shortest path guarantee: {selectedAlgorithm.shortestPathGuarantee}
+            </p>
+          </article>
+
+          <article className="info-card">
+            <p className="info-label">Run Stats</p>
+            <div className="stats-grid">
+              <div>
+                <span className="stat-value">{runStats.visitedNodes}</span>
+                <span className="stat-label">Visited Nodes</span>
+              </div>
+              <div>
+                <span className="stat-value">{runStats.pathLength}</span>
+                <span className="stat-label">Path Length</span>
+              </div>
+              <div>
+                <span className="stat-value">{runStats.completedRuns}</span>
+                <span className="stat-label">Completed Runs</span>
+              </div>
+              <div>
+                <span className="stat-value stat-value-small">{runStats.lastAlgorithm}</span>
+                <span className="stat-label">Last Algorithm</span>
+              </div>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section className="board-panel">

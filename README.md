@@ -66,3 +66,8 @@ pathfinding-visualizer/
 - Add weighted nodes
 - Add maze generation
 - Add speed controls
+- Add diagonal movement as an optional setting
+- Add step-by-step execution controls
+- Improve mobile responsiveness for smaller screens
+- Add algorithm descriptions and complexity details in the UI
+- Add unit tests for grid utilities and pathfinding algorithms
