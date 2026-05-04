@@ -3,6 +3,7 @@ import { algorithms } from './algorithms';
 import {
   DEFAULT_START,
   DEFAULT_TARGET,
+  MAZE_PATTERNS,
   WEIGHTED_NODE_COST,
   clearWalls,
   clearWeights,
@@ -56,6 +57,7 @@ function App() {
   const [selectedTool, setSelectedTool] = useState('wall');
   const [playbackMode, setPlaybackMode] = useState('auto');
   const [allowDiagonal, setAllowDiagonal] = useState(false);
+  const [mazePattern, setMazePattern] = useState('random');
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
   const [preparedRun, setPreparedRun] = useState(null);
   const [boardJson, setBoardJson] = useState('');
@@ -116,8 +118,8 @@ function App() {
     animationRunIdRef.current += 1;
     setIsAnimating(false);
     setPreparedRun(null);
-    setGrid((currentGrid) => generateMaze(currentGrid, startNode, targetNode));
-    setStatusMessage('Generated a random maze with a few weighted nodes.');
+    setGrid((currentGrid) => generateMaze(currentGrid, startNode, targetNode, mazePattern));
+    setStatusMessage(`Generated the ${MAZE_PATTERNS[mazePattern].toLowerCase()} pattern.`);
   }
 
   function stopVisualization() {
@@ -132,6 +134,7 @@ function App() {
       algorithmKey,
       playbackMode,
       allowDiagonal,
+      mazePattern,
       speedMultiplier,
       selectedTool,
     };
@@ -156,6 +159,10 @@ function App() {
 
     if (typeof nextBoard.settings.allowDiagonal === 'boolean') {
       setAllowDiagonal(nextBoard.settings.allowDiagonal);
+    }
+
+    if (typeof nextBoard.settings.mazePattern === 'string' && MAZE_PATTERNS[nextBoard.settings.mazePattern]) {
+      setMazePattern(nextBoard.settings.mazePattern);
     }
 
     if (
@@ -504,6 +511,21 @@ function App() {
               <option value="wall">Wall Nodes</option>
               <option value="weight">Weighted Nodes</option>
               <option value="erase">Eraser</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span>Maze Pattern</span>
+            <select
+              value={mazePattern}
+              onChange={(event) => setMazePattern(event.target.value)}
+              disabled={isAnimating}
+            >
+              {Object.entries(MAZE_PATTERNS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
 

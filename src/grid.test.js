@@ -61,6 +61,29 @@ test('generateMaze keeps start and target cells open', () => {
   assert.equal(mazeGrid[DEFAULT_TARGET.row][DEFAULT_TARGET.col].isWeighted, false);
 });
 
+test('generateMaze recursive division pattern is deterministic for the same board size', () => {
+  const grid = createGrid();
+  const firstMaze = generateMaze(grid, DEFAULT_START, DEFAULT_TARGET, 'recursiveDivision');
+  const secondMaze = generateMaze(grid, DEFAULT_START, DEFAULT_TARGET, 'recursiveDivision');
+
+  assert.deepEqual(firstMaze, secondMaze);
+  assert.equal(firstMaze[0][0].isWall, true);
+  assert.equal(firstMaze[DEFAULT_START.row][DEFAULT_START.col].isWall, false);
+  assert.equal(firstMaze[DEFAULT_TARGET.row][DEFAULT_TARGET.col].isWall, false);
+});
+
+test('generateMaze zigzag pattern creates repeatable wall bands and weighted corridors', () => {
+  const grid = createGrid();
+  const mazeGrid = generateMaze(grid, DEFAULT_START, DEFAULT_TARGET, 'zigzag');
+
+  assert.equal(mazeGrid[2][2].isWall, true);
+  assert.equal(mazeGrid[2][1].isWall, false);
+  assert.equal(mazeGrid[3][4].isWeighted, true);
+  assert.equal(mazeGrid[3][4].weight, WEIGHTED_NODE_COST);
+  assert.equal(mazeGrid[DEFAULT_START.row][DEFAULT_START.col].isWall, false);
+  assert.equal(mazeGrid[DEFAULT_TARGET.row][DEFAULT_TARGET.col].isWall, false);
+});
+
 test('serializeBoardState and importBoardState preserve walls, weights, and settings', () => {
   let grid = createGrid();
   grid = updateNodeType(grid, 3, 3, 'wall');
@@ -70,6 +93,7 @@ test('serializeBoardState and importBoardState preserve walls, weights, and sett
     algorithmKey: 'astar',
     playbackMode: 'step',
     allowDiagonal: true,
+    mazePattern: 'zigzag',
     speedMultiplier: 2,
     selectedTool: 'erase',
   };

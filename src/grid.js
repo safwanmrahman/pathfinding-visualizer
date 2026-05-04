@@ -1,6 +1,11 @@
 export const GRID_ROWS = 20;
 export const GRID_COLS = 40;
 export const WEIGHTED_NODE_COST = 5;
+export const MAZE_PATTERNS = {
+  random: 'Random Maze',
+  recursiveDivision: 'Recursive Division',
+  zigzag: 'Zigzag Corridors',
+};
 
 export const DEFAULT_START = { row: 10, col: 8 };
 export const DEFAULT_TARGET = { row: 10, col: 31 };
@@ -45,6 +50,30 @@ function assertValidPosition(position, label) {
 
 export function cloneGrid(grid) {
   return grid.map((row) => row.map((node) => ({ ...node })));
+}
+
+function createBaseMazeGrid(grid, start, target) {
+  return grid.map((row) =>
+    row.map((node) => ({
+      ...node,
+      isStart: node.row === start.row && node.col === start.col,
+      isTarget: node.row === target.row && node.col === target.col,
+      isWall: false,
+      isWeighted: false,
+      weight: 1,
+      isVisited: false,
+      isPath: false,
+    })),
+  );
+}
+
+function clearSpecialNodes(nextGrid, start, target) {
+  nextGrid[start.row][start.col].isWall = false;
+  nextGrid[start.row][start.col].isWeighted = false;
+  nextGrid[start.row][start.col].weight = 1;
+  nextGrid[target.row][target.col].isWall = false;
+  nextGrid[target.row][target.col].isWeighted = false;
+  nextGrid[target.row][target.col].weight = 1;
 }
 
 export function resetSearchState(grid) {
@@ -114,7 +143,7 @@ export function updateNodeType(grid, row, col, nextType) {
   return nextGrid;
 }
 
-export function generateMaze(grid, start, target) {
+function generateRandomMaze(grid, start, target) {
   return grid.map((row) =>
     row.map((node) => {
       const isSpecial =
@@ -134,7 +163,11 @@ export function generateMaze(grid, start, target) {
         };
       }
 
-      const isBorder = node.row === 0 || node.col === 0 || node.row === grid.length - 1 || node.col === grid[0].length - 1;
+      const isBorder =
+        node.row === 0 ||
+        node.col === 0 ||
+        node.row === grid.length - 1 ||
+        node.col === grid[0].length - 1;
       const randomValue = Math.random();
       const shouldBeWall = isBorder ? randomValue < 0.1 : randomValue < 0.24;
       const shouldBeWeight = !shouldBeWall && randomValue > 0.8;
@@ -149,6 +182,113 @@ export function generateMaze(grid, start, target) {
       };
     }),
   );
+}
+
+function drawVerticalWall(nextGrid, col, startRow, endRow, gapRow) {
+  for (let row = startRow; row <= endRow; row += 1) {
+    if (row === gapRow) {
+      continue;
+    }
+
+    nextGrid[row][col].isWall = true;
+  }
+}
+
+function drawHorizontalWall(nextGrid, row, startCol, endCol, gapCol) {
+  for (let col = startCol; col <= endCol; col += 1) {
+    if (col === gapCol) {
+      continue;
+    }
+
+    nextGrid[row][col].isWall = true;
+  }
+}
+
+function divideChamber(nextGrid, top, bottom, left, right, orientation) {
+  if (bottom - top < 2 || right - left < 2) {
+    return;
+  }
+
+  if (orientation === 'horizontal') {
+    const wallRow = top + 1 + Math.floor((bottom - top - 1) / 2);
+    const gapCol = left + 1 + ((wallRow + left + right) % Math.max(1, right - left - 1));
+    drawHorizontalWall(nextGrid, wallRow, left, right, gapCol);
+    divideChamber(nextGrid, top, wallRow - 1, left, right, 'vertical');
+    divideChamber(nextGrid, wallRow + 1, bottom, left, right, 'vertical');
+    return;
+  }
+
+  const wallCol = left + 1 + Math.floor((right - left - 1) / 2);
+  const gapRow = top + 1 + ((wallCol + top + bottom) % Math.max(1, bottom - top - 1));
+  drawVerticalWall(nextGrid, wallCol, top, bottom, gapRow);
+  divideChamber(nextGrid, top, bottom, left, wallCol - 1, 'horizontal');
+  divideChamber(nextGrid, top, bottom, wallCol + 1, right, 'horizontal');
+}
+
+function generateRecursiveDivisionMaze(grid, start, target) {
+  const nextGrid = createBaseMazeGrid(grid, start, target);
+  const lastRow = nextGrid.length - 1;
+  const lastCol = nextGrid[0].length - 1;
+
+  for (let row = 0; row <= lastRow; row += 1) {
+    nextGrid[row][0].isWall = true;
+    nextGrid[row][lastCol].isWall = true;
+  }
+
+  for (let col = 0; col <= lastCol; col += 1) {
+    nextGrid[0][col].isWall = true;
+    nextGrid[lastRow][col].isWall = true;
+  }
+
+  divideChamber(nextGrid, 1, lastRow - 1, 1, lastCol - 1, 'vertical');
+  clearSpecialNodes(nextGrid, start, target);
+  return nextGrid;
+}
+
+function generateZigzagMaze(grid, start, target) {
+  const nextGrid = createBaseMazeGrid(grid, start, target);
+  const lastRow = nextGrid.length - 1;
+  const lastCol = nextGrid[0].length - 1;
+
+  for (let row = 2; row < lastRow; row += 3) {
+    const gapCol = row % 2 === 0 ? 1 : lastCol - 1;
+
+    for (let col = 1; col < lastCol; col += 1) {
+      if (col === gapCol) {
+        continue;
+      }
+
+      nextGrid[row][col].isWall = true;
+    }
+  }
+
+  for (let col = 4; col < lastCol; col += 6) {
+    for (let row = 1; row < lastRow; row += 1) {
+      if (row % 3 === 2) {
+        continue;
+      }
+
+      if ((col / 2 + row) % 5 === 0) {
+        nextGrid[row][col].isWeighted = true;
+        nextGrid[row][col].weight = WEIGHTED_NODE_COST;
+      }
+    }
+  }
+
+  clearSpecialNodes(nextGrid, start, target);
+  return nextGrid;
+}
+
+export function generateMaze(grid, start, target, pattern = 'random') {
+  if (pattern === 'recursiveDivision') {
+    return generateRecursiveDivisionMaze(grid, start, target);
+  }
+
+  if (pattern === 'zigzag') {
+    return generateZigzagMaze(grid, start, target);
+  }
+
+  return generateRandomMaze(grid, start, target);
 }
 
 export function exportBoardState(grid, start, target, settings = {}) {

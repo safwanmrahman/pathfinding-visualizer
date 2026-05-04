@@ -9,6 +9,7 @@ Interactive visualizer for BFS, DFS, Dijkstra, and A* pathfinding algorithms.
 - Click and drag to draw or erase walls
 - Place weighted nodes to influence path cost
 - Generate random mazes directly from the controls panel
+- Choose from random and deterministic maze generation patterns
 - Drag the start and target nodes to test different layouts
 - Toggle diagonal movement as an optional search rule
 - Prepare and step through runs frame by frame
@@ -69,6 +70,7 @@ pathfinding-visualizer/
 
 - Choose an algorithm from the dropdown
 - Choose between wall drawing, weighted nodes, or erasing
+- Choose a maze pattern before generating a new board layout
 - Switch between auto-play and step-by-step playback
 - Toggle diagonal movement on or off
 - Click `Visualize` to animate the search
@@ -87,8 +89,9 @@ pathfinding-visualizer/
 - Weighted nodes have a movement cost of `5`
 - BFS and DFS ignore weighted cost, while Dijkstra and A* use it
 - Diagonal movement uses 8-direction traversal with corner cutting disabled
+- Maze patterns include `Random Maze`, `Recursive Division`, and `Zigzag Corridors`
 - Exported board JSON includes start/target positions, walls, weighted nodes, and key playback settings
-- Importing a board also restores supported UI settings such as algorithm, playback mode, animation speed, diagonal movement, and draw tool
+- Importing a board also restores supported UI settings such as algorithm, playback mode, animation speed, diagonal movement, maze pattern, and draw tool
 - The app is ready for deployment on Vercel or Netlify as a standard Vite project
 - The UI includes algorithm descriptions, shortest-path guarantees, and complexity details
 - The layout is tuned for both desktop and smaller mobile screens
@@ -106,5 +109,4 @@ It runs on every push to `main` and on every pull request, and it will:
 ## Future Improvements
 
 - Add named saved presets on top of the existing JSON import/export flow
-- Add more deterministic maze generation patterns
 - Add performance-focused data structures for larger grids
