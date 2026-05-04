@@ -3,10 +3,14 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_START,
   DEFAULT_TARGET,
+  WEIGHTED_NODE_COST,
   clearWeights,
   createGrid,
+  exportBoardState,
   generateMaze,
+  importBoardState,
   moveSpecialNode,
+  serializeBoardState,
   updateNodeType,
 } from './grid.js';
 
@@ -55,4 +59,37 @@ test('generateMaze keeps start and target cells open', () => {
   assert.equal(mazeGrid[DEFAULT_START.row][DEFAULT_START.col].isWeighted, false);
   assert.equal(mazeGrid[DEFAULT_TARGET.row][DEFAULT_TARGET.col].isWall, false);
   assert.equal(mazeGrid[DEFAULT_TARGET.row][DEFAULT_TARGET.col].isWeighted, false);
+});
+
+test('serializeBoardState and importBoardState preserve walls, weights, and settings', () => {
+  let grid = createGrid();
+  grid = updateNodeType(grid, 3, 3, 'wall');
+  grid = updateNodeType(grid, 4, 7, 'weight');
+
+  const settings = {
+    algorithmKey: 'astar',
+    playbackMode: 'step',
+    allowDiagonal: true,
+    speedMultiplier: 2,
+    selectedTool: 'erase',
+  };
+
+  const serializedState = serializeBoardState(grid, DEFAULT_START, DEFAULT_TARGET, settings);
+  const importedState = importBoardState(serializedState);
+
+  assert.equal(importedState.grid[3][3].isWall, true);
+  assert.equal(importedState.grid[4][7].isWeighted, true);
+  assert.equal(importedState.grid[4][7].weight, WEIGHTED_NODE_COST);
+  assert.deepEqual(importedState.start, DEFAULT_START);
+  assert.deepEqual(importedState.target, DEFAULT_TARGET);
+  assert.deepEqual(importedState.settings, settings);
+});
+
+test('importBoardState rejects board data with the wrong grid size', () => {
+  const exportedState = exportBoardState(createGrid(), DEFAULT_START, DEFAULT_TARGET);
+  exportedState.rows = 10;
+
+  assert.throws(() => importBoardState(exportedState), {
+    message: 'Board data must match the 20x40 grid size.',
+  });
 });

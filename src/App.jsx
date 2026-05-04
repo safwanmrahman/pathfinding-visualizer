@@ -3,12 +3,15 @@ import { algorithms } from './algorithms';
 import {
   DEFAULT_START,
   DEFAULT_TARGET,
+  WEIGHTED_NODE_COST,
   clearWalls,
   clearWeights,
   createGrid,
   generateMaze,
+  importBoardState,
   moveSpecialNode,
   resetSearchState,
+  serializeBoardState,
   updateNodeType,
 } from './grid';
 
@@ -42,6 +45,7 @@ function sleep(delay) {
 
 function App() {
   const animationRunIdRef = useRef(0);
+  const importInputRef = useRef(null);
   const [startNode, setStartNode] = useState(DEFAULT_START);
   const [targetNode, setTargetNode] = useState(DEFAULT_TARGET);
   const [grid, setGrid] = useState(() => createGrid(DEFAULT_START, DEFAULT_TARGET));
@@ -54,6 +58,7 @@ function App() {
   const [allowDiagonal, setAllowDiagonal] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
   const [preparedRun, setPreparedRun] = useState(null);
+  const [boardJson, setBoardJson] = useState('');
   const [runStats, setRunStats] = useState(DEFAULT_STATS);
   const [statusMessage, setStatusMessage] = useState(
     'Draw walls or weighted nodes, drag the start/target nodes, then visualize an algorithm.',
@@ -120,6 +125,103 @@ function App() {
     setIsAnimating(false);
     setPreparedRun(null);
     setStatusMessage('Visualization stopped. You can resume with another run or edit the board.');
+  }
+
+  function getBoardSettings() {
+    return {
+      algorithmKey,
+      playbackMode,
+      allowDiagonal,
+      speedMultiplier,
+      selectedTool,
+    };
+  }
+
+  function applyImportedBoard(nextBoard, sourceLabel) {
+    animationRunIdRef.current += 1;
+    setIsAnimating(false);
+    setPreparedRun(null);
+    setGrid(nextBoard.grid);
+    setStartNode(nextBoard.start);
+    setTargetNode(nextBoard.target);
+    setRunStats(DEFAULT_STATS);
+
+    if (typeof nextBoard.settings.algorithmKey === 'string' && algorithms[nextBoard.settings.algorithmKey]) {
+      setAlgorithmKey(nextBoard.settings.algorithmKey);
+    }
+
+    if (nextBoard.settings.playbackMode === 'auto' || nextBoard.settings.playbackMode === 'step') {
+      setPlaybackMode(nextBoard.settings.playbackMode);
+    }
+
+    if (typeof nextBoard.settings.allowDiagonal === 'boolean') {
+      setAllowDiagonal(nextBoard.settings.allowDiagonal);
+    }
+
+    if (
+      typeof nextBoard.settings.speedMultiplier === 'number' &&
+      nextBoard.settings.speedMultiplier >= 0.5 &&
+      nextBoard.settings.speedMultiplier <= 3
+    ) {
+      setSpeedMultiplier(nextBoard.settings.speedMultiplier);
+    }
+
+    if (
+      nextBoard.settings.selectedTool === 'wall' ||
+      nextBoard.settings.selectedTool === 'weight' ||
+      nextBoard.settings.selectedTool === 'erase'
+    ) {
+      setSelectedTool(nextBoard.settings.selectedTool);
+    }
+
+    setStatusMessage(`Imported board from ${sourceLabel}.`);
+  }
+
+  function exportBoard() {
+    const nextBoardJson = serializeBoardState(grid, startNode, targetNode, getBoardSettings());
+    setBoardJson(nextBoardJson);
+
+    const file = new Blob([nextBoardJson], { type: 'application/json' });
+    const url = window.URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'pathfinding-board.json';
+    link.click();
+    window.URL.revokeObjectURL(url);
+
+    setStatusMessage('Exported the current board as JSON and downloaded it.');
+  }
+
+  function importBoardFromText() {
+    try {
+      const nextBoard = importBoardState(boardJson);
+      applyImportedBoard(nextBoard, 'the JSON editor');
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error ? `Import failed: ${error.message}` : 'Import failed: invalid board JSON.',
+      );
+    }
+  }
+
+  async function handleImportFileChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const fileContents = await file.text();
+      setBoardJson(fileContents);
+      const nextBoard = importBoardState(fileContents);
+      applyImportedBoard(nextBoard, file.name);
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error ? `Import failed: ${error.message}` : 'Import failed: invalid board JSON file.',
+      );
+    } finally {
+      event.target.value = '';
+    }
   }
 
   function handleCellMouseDown(row, col) {
@@ -441,6 +543,38 @@ function App() {
           </button>
         </div>
 
+        <div className="import-export-panel">
+          <label className="field import-export-field">
+            <span>Board JSON</span>
+            <textarea
+              className="board-json-input"
+              value={boardJson}
+              onChange={(event) => setBoardJson(event.target.value)}
+              placeholder="Export the current board, or paste a saved board JSON here to import it."
+              spellCheck="false"
+            />
+          </label>
+
+          <div className="import-export-actions">
+            <button onClick={exportBoard} disabled={isAnimating}>
+              Export Board
+            </button>
+            <button onClick={importBoardFromText} disabled={isAnimating || !boardJson.trim()}>
+              Import JSON
+            </button>
+            <button onClick={() => importInputRef.current?.click()} disabled={isAnimating}>
+              Upload JSON
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="visually-hidden"
+              onChange={handleImportFileChange}
+            />
+          </div>
+        </div>
+
         <div className="legend">
           <div className="legend-item">
             <span className="legend-swatch start" />
@@ -456,7 +590,7 @@ function App() {
           </div>
           <div className="legend-item">
             <span className="legend-swatch weight" />
-            Weight 5
+            Weight {WEIGHTED_NODE_COST}
           </div>
           <div className="legend-item">
             <span className="legend-swatch visited" />
@@ -476,8 +610,8 @@ function App() {
             <h2>{selectedAlgorithm.label}</h2>
             <p>{selectedAlgorithm.summary}</p>
             <p className="info-note">
-              Weighted nodes cost 5. BFS and DFS treat them like normal open cells, while Dijkstra
-              and A* factor the extra cost into route selection.
+              Weighted nodes cost {WEIGHTED_NODE_COST}. BFS and DFS treat them like normal open
+              cells, while Dijkstra and A* factor the extra cost into route selection.
             </p>
             <p className="info-note">
               Movement mode: {allowDiagonal ? '8-directional with corner cutting disabled.' : '4-directional only.'}
