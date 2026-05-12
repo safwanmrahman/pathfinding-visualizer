@@ -1,6 +1,7 @@
 export const GRID_ROWS = 20;
 export const GRID_COLS = 40;
 export const WEIGHTED_NODE_COST = 5;
+export const BOARD_STATE_VERSION = 1;
 export const MAZE_PATTERNS = {
   random: 'Random Maze',
   recursiveDivision: 'Recursive Division',
@@ -45,6 +46,22 @@ function isValidPosition(position) {
 function assertValidPosition(position, label) {
   if (!isValidPosition(position)) {
     throw new Error(`${label} must be inside the ${GRID_ROWS}x${GRID_COLS} grid.`);
+  }
+}
+
+function assertPlainObject(value, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${label} must be a JSON object.`);
+  }
+}
+
+function assertNodeList(value, label) {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array.`);
+  }
+
+  if (value.length > GRID_ROWS * GRID_COLS) {
+    throw new Error(`${label} cannot contain more than ${GRID_ROWS * GRID_COLS} entries.`);
   }
 }
 
@@ -309,7 +326,7 @@ export function exportBoardState(grid, start, target, settings = {}) {
   }
 
   return {
-    version: 1,
+    version: BOARD_STATE_VERSION,
     rows: GRID_ROWS,
     cols: GRID_COLS,
     start,
@@ -325,10 +342,23 @@ export function serializeBoardState(grid, start, target, settings = {}) {
 }
 
 export function importBoardState(boardState) {
-  const parsedState = typeof boardState === 'string' ? JSON.parse(boardState) : boardState;
+  let parsedState = boardState;
 
-  if (!parsedState || typeof parsedState !== 'object') {
-    throw new Error('Board data must be a JSON object.');
+  if (typeof boardState === 'string') {
+    try {
+      parsedState = JSON.parse(boardState);
+    } catch {
+      throw new Error('Board data must be valid JSON.');
+    }
+  }
+
+  assertPlainObject(parsedState, 'Board data');
+
+  if (
+    parsedState.version !== undefined &&
+    (!Number.isInteger(parsedState.version) || parsedState.version < 1 || parsedState.version > BOARD_STATE_VERSION)
+  ) {
+    throw new Error(`Board data version must be between 1 and ${BOARD_STATE_VERSION}.`);
   }
 
   if (parsedState.rows !== GRID_ROWS || parsedState.cols !== GRID_COLS) {
@@ -343,8 +373,11 @@ export function importBoardState(boardState) {
   }
 
   const grid = createGrid(parsedState.start, parsedState.target);
-  const walls = Array.isArray(parsedState.walls) ? parsedState.walls : [];
-  const weights = Array.isArray(parsedState.weights) ? parsedState.weights : [];
+  const walls = parsedState.walls ?? [];
+  const weights = parsedState.weights ?? [];
+
+  assertNodeList(walls, 'Walls');
+  assertNodeList(weights, 'Weights');
 
   for (const wall of walls) {
     assertValidPosition(wall, 'Wall node');
@@ -380,6 +413,10 @@ export function importBoardState(boardState) {
       Number.isFinite(weightNode.weight) && weightNode.weight > 1
         ? weightNode.weight
         : WEIGHTED_NODE_COST;
+  }
+
+  if (parsedState.settings !== undefined) {
+    assertPlainObject(parsedState.settings, 'Board settings');
   }
 
   return {

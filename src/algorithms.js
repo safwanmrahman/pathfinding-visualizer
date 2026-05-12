@@ -57,25 +57,24 @@ function reconstructPath(previous, endKey, grid) {
   return path;
 }
 
-function emptyResult() {
-  return { visitedOrder: [], path: [] };
+function resultWithPath(visitedOrder, path = []) {
+  return { visitedOrder, path };
 }
 
 export function bfs(grid, start, target, options = {}) {
   const visitedOrder = [];
   const queue = [start];
+  let queueIndex = 0;
   const seen = new Set([getNodeKey(start)]);
   const previous = new Map();
 
-  while (queue.length > 0) {
-    const current = queue.shift();
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex];
+    queueIndex += 1;
     visitedOrder.push(current);
 
     if (current.row === target.row && current.col === target.col) {
-      return {
-        visitedOrder,
-        path: reconstructPath(previous, getNodeKey(current), grid),
-      };
+      return resultWithPath(visitedOrder, reconstructPath(previous, getNodeKey(current), grid));
     }
 
     for (const neighbor of getNeighbors(grid, current, options)) {
@@ -91,7 +90,7 @@ export function bfs(grid, start, target, options = {}) {
     }
   }
 
-  return emptyResult();
+  return resultWithPath(visitedOrder);
 }
 
 export function dfs(grid, start, target, options = {}) {
@@ -112,10 +111,7 @@ export function dfs(grid, start, target, options = {}) {
     visitedOrder.push(current);
 
     if (current.row === target.row && current.col === target.col) {
-      return {
-        visitedOrder,
-        path: reconstructPath(previous, currentKey, grid),
-      };
+      return resultWithPath(visitedOrder, reconstructPath(previous, currentKey, grid));
     }
 
     const neighbors = getNeighbors(grid, current, options).reverse();
@@ -135,7 +131,7 @@ export function dfs(grid, start, target, options = {}) {
     }
   }
 
-  return emptyResult();
+  return resultWithPath(visitedOrder);
 }
 
 export function dijkstra(grid, start, target, options = {}) {
@@ -176,10 +172,7 @@ export function dijkstra(grid, start, target, options = {}) {
     visitedOrder.push(current);
 
     if (current.row === target.row && current.col === target.col) {
-      return {
-        visitedOrder,
-        path: reconstructPath(previous, currentKey, grid),
-      };
+      return resultWithPath(visitedOrder, reconstructPath(previous, currentKey, grid));
     }
 
     for (const neighbor of getNeighbors(grid, current, options)) {
@@ -193,7 +186,7 @@ export function dijkstra(grid, start, target, options = {}) {
     }
   }
 
-  return emptyResult();
+  return resultWithPath(visitedOrder);
 }
 
 function estimateDistance(node, target, allowDiagonal) {
@@ -243,10 +236,7 @@ export function aStar(grid, start, target, options = {}) {
     visitedOrder.push(current);
 
     if (current.row === target.row && current.col === target.col) {
-      return {
-        visitedOrder,
-        path: reconstructPath(previous, currentKey, grid),
-      };
+      return resultWithPath(visitedOrder, reconstructPath(previous, currentKey, grid));
     }
 
     for (const neighbor of getNeighbors(grid, current, options)) {
@@ -273,7 +263,7 @@ export function aStar(grid, start, target, options = {}) {
     }
   }
 
-  return emptyResult();
+  return resultWithPath(visitedOrder);
 }
 
 export const algorithms = {

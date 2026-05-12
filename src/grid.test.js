@@ -117,3 +117,27 @@ test('importBoardState rejects board data with the wrong grid size', () => {
     message: 'Board data must match the 20x40 grid size.',
   });
 });
+
+test('importBoardState rejects invalid JSON input', () => {
+  assert.throws(() => importBoardState('{bad json'), {
+    message: 'Board data must be valid JSON.',
+  });
+});
+
+test('importBoardState rejects unsupported future versions', () => {
+  const exportedState = exportBoardState(createGrid(), DEFAULT_START, DEFAULT_TARGET);
+  exportedState.version = 99;
+
+  assert.throws(() => importBoardState(exportedState), {
+    message: 'Board data version must be between 1 and 1.',
+  });
+});
+
+test('importBoardState rejects malformed wall collections', () => {
+  const exportedState = exportBoardState(createGrid(), DEFAULT_START, DEFAULT_TARGET);
+  exportedState.walls = 'not-an-array';
+
+  assert.throws(() => importBoardState(exportedState), {
+    message: 'Walls must be an array.',
+  });
+});
