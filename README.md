@@ -4,8 +4,6 @@ An interactive pathfinding sandbox for comparing how BFS, DFS, Dijkstra, and A* 
 
 ## Demo
 
-![Pathfinding Visualizer demo preview](./assets/pathfinding-visualizer-demo.png)
-
 - Live demo: coming soon
 - Local demo: run `npm run dev`
 - Demo placeholder: add a short GIF or hosted recording showing wall drawing, weighted nodes, and one full algorithm run
