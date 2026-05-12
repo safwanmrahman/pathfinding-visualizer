@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Pathfinding Visualizer icon</title>
+  <desc id="desc">A warm grid with a highlighted path between a start and target node.</desc>
+  <rect width="64" height="64" rx="14" fill="#f7f3ec" />
+  <rect x="7" y="7" width="50" height="50" rx="10" fill="#fffdfa" stroke="#cfbfaa" stroke-width="2" />
+
+  <g stroke="#cfbfaa" stroke-width="1.5">
+    <path d="M19 7v50" />
+    <path d="M32 7v50" />
+    <path d="M45 7v50" />
+    <path d="M7 19h50" />
+    <path d="M7 32h50" />
+    <path d="M7 45h50" />
+  </g>
+
+  <path
+    d="M16 48h14V32h12V18h6"
+    fill="none"
+    stroke="#7d5f2f"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="5"
+  />
+
+  <circle cx="16" cy="48" r="5.5" fill="#1f7a63" stroke="#fffdfa" stroke-width="2" />
+  <circle cx="48" cy="18" r="5.5" fill="#c44c41" stroke="#fffdfa" stroke-width="2" />
+</svg>

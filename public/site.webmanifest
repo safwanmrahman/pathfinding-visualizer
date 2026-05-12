@@ -1,0 +1,16 @@
+{
+  "name": "Pathfinding Visualizer",
+  "short_name": "Pathfinding",
+  "description": "Interactive grid-based visualizer for BFS, DFS, Dijkstra, and A* pathfinding algorithms.",
+  "background_color": "#efe8dc",
+  "theme_color": "#f7f3ec",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

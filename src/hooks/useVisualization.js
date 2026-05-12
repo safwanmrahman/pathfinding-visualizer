@@ -1,23 +1,40 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { algorithms } from '../algorithms';
 import { DEFAULT_STATS, PATH_DELAY_MS, VISIT_DELAY_MS } from '../constants';
 import { resetSearchState } from '../grid';
 import { createFrames, createRunSummary } from '../utils/runSummary';
 
-function sleep(delay) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, delay);
-  });
-}
-
 export function useVisualization({ grid, setGrid, startNode, targetNode, setStatusMessage, speedMultiplier }) {
   const animationRunIdRef = useRef(0);
+  const pendingSleepsRef = useRef(new Set());
   const [isAnimating, setIsAnimating] = useState(false);
   const [preparedRun, setPreparedRun] = useState(null);
   const [runStats, setRunStats] = useState(DEFAULT_STATS);
 
+  function clearPendingTimeouts() {
+    for (const pendingSleep of pendingSleepsRef.current) {
+      window.clearTimeout(pendingSleep.timeoutId);
+      pendingSleep.resolve();
+    }
+
+    pendingSleepsRef.current.clear();
+  }
+
+  function sleep(delay) {
+    return new Promise((resolve) => {
+      const timeoutId = window.setTimeout(() => {
+        pendingSleepsRef.current.delete(pendingSleep);
+        resolve();
+      }, delay);
+
+      const pendingSleep = { timeoutId, resolve };
+      pendingSleepsRef.current.add(pendingSleep);
+    });
+  }
+
   function cancelVisualization(clearPreparedRun = true) {
     animationRunIdRef.current += 1;
+    clearPendingTimeouts();
     setIsAnimating(false);
 
     if (clearPreparedRun) {
@@ -27,8 +44,16 @@ export function useVisualization({ grid, setGrid, startNode, targetNode, setStat
 
   function applyFrame(frame) {
     setGrid((currentGrid) => {
-      const nextGrid = currentGrid.map((row) => row.map((cell) => ({ ...cell })));
-      const nextNode = nextGrid[frame.row][frame.col];
+      const currentRow = currentGrid[frame.row];
+      const currentNode = currentRow[frame.col];
+
+      if ((frame.type === 'visit' && currentNode.isVisited) || (frame.type === 'path' && currentNode.isPath)) {
+        return currentGrid;
+      }
+
+      const nextGrid = [...currentGrid];
+      const nextRow = [...currentRow];
+      const nextNode = { ...currentNode };
 
       if (frame.type === 'visit') {
         nextNode.isVisited = true;
@@ -37,6 +62,9 @@ export function useVisualization({ grid, setGrid, startNode, targetNode, setStat
       if (frame.type === 'path') {
         nextNode.isPath = true;
       }
+
+      nextRow[frame.col] = nextNode;
+      nextGrid[frame.row] = nextRow;
 
       return nextGrid;
     });
@@ -142,44 +170,59 @@ export function useVisualization({ grid, setGrid, startNode, targetNode, setStat
         : `Running ${algorithm.label}...`,
     );
 
-    const { visitedOrder, path } = algorithm.run(preparedGrid, start, target, traversalOptions);
-    const summary = createRunSummary(algorithm.label, visitedOrder, path);
-    const frames = createFrames(visitedOrder, path);
+    try {
+      const { visitedOrder, path } = algorithm.run(preparedGrid, start, target, traversalOptions);
+      const summary = createRunSummary(algorithm.label, visitedOrder, path);
+      const frames = createFrames(visitedOrder, path);
 
-    if (playbackMode === 'step') {
-      setPreparedRun({
-        frames,
-        nextIndex: 0,
-        summary,
-      });
-      setIsAnimating(false);
-      setStatusMessage(
-        frames.length > 0
-          ? `Prepared ${frames.length} frames for ${algorithm.label}. Use Step Forward to walk through the run.`
-          : `${algorithm.label} finished immediately with no drawable frames for this board state.`,
-      );
+      if (playbackMode === 'step') {
+        setPreparedRun({
+          frames,
+          nextIndex: 0,
+          summary,
+        });
+        setIsAnimating(false);
+        setStatusMessage(
+          frames.length > 0
+            ? `Prepared ${frames.length} frames for ${algorithm.label}. Use Step Forward to walk through the run.`
+            : `${algorithm.label} finished immediately with no drawable frames for this board state.`,
+        );
 
-      if (frames.length === 0) {
-        finalizeRun(summary);
-        setPreparedRun(null);
+        if (frames.length === 0) {
+          finalizeRun(summary);
+          setPreparedRun(null);
+        }
+
+        return;
       }
 
-      return;
+      const completed = await animateSearch(frames, runId);
+
+      if (!completed || animationRunIdRef.current !== runId) {
+        return;
+      }
+
+      finalizeRun(summary);
+      setIsAnimating(false);
+    } catch {
+      if (animationRunIdRef.current === runId) {
+        setIsAnimating(false);
+        setPreparedRun(null);
+        setStatusMessage(`Unable to complete ${algorithm.label}. Please reset the board and try again.`);
+      }
     }
-
-    const completed = await animateSearch(frames, runId);
-
-    if (!completed || animationRunIdRef.current !== runId) {
-      return;
-    }
-
-    finalizeRun(summary);
-    setIsAnimating(false);
   }
 
   function resetRunStats() {
     setRunStats(DEFAULT_STATS);
   }
+
+  useEffect(() => {
+    return () => {
+      animationRunIdRef.current += 1;
+      clearPendingTimeouts();
+    };
+  }, []);
 
   return {
     isAnimating,

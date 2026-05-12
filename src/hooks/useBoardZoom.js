@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 const MIN_ZOOM = 0.45;
 const MAX_ZOOM = 1.6;
 const ZOOM_STEP = 0.1;
+const FIT_PADDING_RATIO = 0.97;
 
 function clampZoom(value) {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
@@ -35,10 +36,15 @@ export function useBoardZoom() {
       return null;
     }
 
-    const widthRatio = viewport.clientWidth / baseWidth;
-    const heightRatio = viewport.clientHeight / baseHeight;
+    const viewportStyles = window.getComputedStyle(viewport);
+    const widthRatio = (viewport.clientWidth * FIT_PADDING_RATIO) / baseWidth;
+    const heightRatio = (viewport.clientHeight * FIT_PADDING_RATIO) / baseHeight;
+    const heightIsConstrained =
+      viewportStyles.overflowY === 'auto' ||
+      viewportStyles.overflowY === 'scroll' ||
+      viewportStyles.maxHeight !== 'none';
 
-    return clampZoom(Math.min(widthRatio, heightRatio));
+    return clampZoom(heightIsConstrained ? Math.min(widthRatio, heightRatio) : widthRatio);
   }
 
   function fitBoard() {
@@ -72,7 +78,9 @@ export function useBoardZoom() {
       return undefined;
     }
 
-    fitBoard();
+    const frameId = window.requestAnimationFrame(() => {
+      fitBoard();
+    });
 
     const resizeObserver = new ResizeObserver(() => {
       if (zoomModeRef.current === 'fit') {
@@ -83,7 +91,10 @@ export function useBoardZoom() {
     resizeObserver.observe(viewport);
     resizeObserver.observe(grid);
 
-    return () => resizeObserver.disconnect();
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+    };
   }, [zoomMode]);
 
   return {

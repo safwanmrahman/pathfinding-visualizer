@@ -21,7 +21,7 @@ export function GridBoard({ grid, onCellMouseDown, onCellMouseEnter }) {
             <h2>Build a scenario, then watch the search unfold.</h2>
           </div>
 
-          <div className="board-zoom-controls" aria-label="Grid zoom controls">
+          <div className="board-zoom-controls" role="toolbar" aria-label="Grid zoom controls">
             <ZoomButton onClick={handleZoomOut}>Zoom -</ZoomButton>
             <ZoomButton onClick={handleZoomIn}>Zoom +</ZoomButton>
             <ZoomButton onClick={handleFitBoard}>Fit Board</ZoomButton>

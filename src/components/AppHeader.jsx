@@ -18,10 +18,11 @@ export function AppHeader({ allowDiagonal, selectedTool }) {
   return (
     <header className="hero">
       <p className="hero-kicker">Pathfinding Visualizer</p>
-      <h1>Compare search strategies on a board you shape yourself.</h1>
+      <h1>Pathfinding Visualizer</h1>
       <p className="hero-copy">
-        Draw walls, add weighted terrain, move the start and target nodes, and study how each
-        algorithm explores the same challenge from a different perspective.
+        Compare search strategies on a board you shape yourself. Draw walls, add weighted terrain,
+        move the start and target nodes, and study how each algorithm explores the same challenge
+        from a different perspective.
       </p>
 
       <div className="hero-metadata">

@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 function getCellClasses(node) {
   return [
     'cell',
@@ -12,16 +14,38 @@ function getCellClasses(node) {
     .join(' ');
 }
 
-export function NodeCell({ node, onMouseDown, onMouseEnter }) {
+function getCellLabel(node) {
+  const states = [];
+
+  if (node.isStart) states.push('start node');
+  if (node.isTarget) states.push('target node');
+  if (node.isWall) states.push('wall');
+  if (node.isWeighted) states.push(`weighted node with cost ${node.weight}`);
+  if (node.isVisited) states.push('visited');
+  if (node.isPath) states.push('final path');
+
+  const stateLabel = states.length > 0 ? `, ${states.join(', ')}` : '';
+  return `Row ${node.row + 1}, column ${node.col + 1}${stateLabel}`;
+}
+
+function NodeCellComponent({ node, onMouseDown, onMouseEnter }) {
   return (
     <button
       type="button"
       className={getCellClasses(node)}
       onMouseDown={() => onMouseDown(node.row, node.col)}
       onMouseEnter={() => onMouseEnter(node.row, node.col)}
-      aria-label={`Row ${node.row + 1}, column ${node.col + 1}`}
+      aria-label={getCellLabel(node)}
       role="gridcell"
       tabIndex={-1}
     />
   );
 }
+
+export const NodeCell = memo(NodeCellComponent, (previousProps, nextProps) => {
+  return (
+    previousProps.node === nextProps.node &&
+    previousProps.onMouseDown === nextProps.onMouseDown &&
+    previousProps.onMouseEnter === nextProps.onMouseEnter
+  );
+});

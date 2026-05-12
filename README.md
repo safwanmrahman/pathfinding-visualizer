@@ -60,7 +60,7 @@ Explores outward level by level from the start node.
 
 - Best for: unweighted grids when you want the shortest path in number of steps.
 - Strength: guarantees the shortest path when every move has equal cost.
-- Limitation: does not account for weighted nodes, so it treats them like normal cells.
+- Drawback: does not account for weighted nodes, so it treats them like normal cells.
 
 ### Depth-First Search (DFS)
 
@@ -68,7 +68,7 @@ Pushes down one branch as far as possible before backtracking.
 
 - Best for: showing traversal behavior or quickly exploring a space without needing the optimal route.
 - Strength: simple and useful for illustrating how search order affects results.
-- Limitation: does not guarantee the shortest path and ignores weighted cost.
+- Drawback: does not guarantee the shortest path and ignores weighted cost.
 
 ### Dijkstra's Algorithm
 
@@ -76,7 +76,7 @@ Always expands the lowest known total path cost first.
 
 - Best for: weighted grids where path cost matters more than raw step count.
 - Strength: guarantees the lowest-cost path when all edge weights are non-negative.
-- Limitation: usually visits more nodes than A* because it has no goal-directed heuristic.
+- Drawback: usually visits more nodes than A* because it has no goal-directed heuristic.
 
 ### A* Search
 
@@ -84,7 +84,7 @@ Combines Dijkstra-style path cost with a heuristic that estimates distance to th
 
 - Best for: weighted pathfinding when you want optimal paths with more goal-directed exploration.
 - Strength: guarantees the shortest path in this project’s grid model while usually exploring fewer nodes than Dijkstra.
-- Limitation: still depends on the quality of the heuristic and can be more complex to reason about than BFS or DFS.
+- Drawback: still depends on the quality of the heuristic and can be more complex to reason about than BFS or DFS.
 
 ## Interaction Model
 
@@ -98,27 +98,38 @@ Combines Dijkstra-style path cost with a heuristic that estimates distance to th
 ## Project Structure
 
 ```text
+public/
+├── favicon.svg
+└── site.webmanifest
 src/
 ├── App.jsx
 ├── algorithms.js
+├── algorithms.test.js
 ├── components/
 │   ├── AlgorithmSelector.jsx
+│   ├── AppHeader.jsx
 │   ├── ControlsPanel.jsx
 │   ├── GridBoard.jsx
 │   ├── ImportExportPanel.jsx
+│   ├── LearningPanel.jsx
 │   ├── Legend.jsx
+│   ├── LegendPanel.jsx
 │   ├── NodeCell.jsx
-│   └── StatsPanel.jsx
+│   ├── StatsPanel.jsx
+│   ├── StatusPanel.jsx
+│   └── UtilitySidebar.jsx
 ├── constants.js
 ├── grid.js
+├── grid.test.js
 ├── hooks/
+│   ├── useBoardZoom.js
 │   ├── useGridInteraction.js
 │   └── useVisualization.js
-├── utils/
-│   ├── boardSettings.js
-│   └── runSummary.js
-├── *.test.js
-└── styles.css
+├── main.jsx
+├── styles.css
+└── utils/
+    ├── boardSettings.js
+    └── runSummary.js
 ```
 
 ## Safety and Validation Notes
@@ -157,12 +168,3 @@ The project includes unit tests for:
 - board import/export validation
 
 CI also runs `npm test` and `npm run build` on pushes and pull requests.
-
-## Portfolio Notes
-
-This project is designed to show:
-
-- algorithm visualization in a custom interactive UI
-- state-heavy React component design without external state libraries
-- correctness-minded pathfinding logic and test coverage
-- practical attention to import validation, UI feedback, and maintainable refactoring

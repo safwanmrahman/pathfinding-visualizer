@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { moveSpecialNode, resetSearchState, updateNodeType } from '../grid';
 
 function getNextToolType(selectedTool, node) {
@@ -37,7 +37,7 @@ export function useGridInteraction({
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, []);
 
-  function handleCellMouseDown(row, col) {
+  const handleCellMouseDown = useCallback((row, col) => {
     if (isAnimating) {
       return;
     }
@@ -61,9 +61,9 @@ export function useGridInteraction({
     onBoardEdit();
     setDragMode(nextType);
     setGrid((currentGrid) => updateNodeType(resetSearchState(currentGrid), row, col, nextType));
-  }
+  }, [grid, isAnimating, onBoardEdit, selectedTool, setGrid]);
 
-  function handleCellMouseEnter(row, col) {
+  const handleCellMouseEnter = useCallback((row, col) => {
     if (!isMouseDown || isAnimating || !dragMode) {
       return;
     }
@@ -94,8 +94,30 @@ export function useGridInteraction({
       return;
     }
 
+    if (dragMode === 'wall' && node.isWall) {
+      return;
+    }
+
+    if (dragMode === 'weight' && node.isWeighted) {
+      return;
+    }
+
+    if (dragMode === 'empty' && !node.isWall && !node.isWeighted) {
+      return;
+    }
+
     setGrid((currentGrid) => updateNodeType(resetSearchState(currentGrid), row, col, dragMode));
-  }
+  }, [
+    dragMode,
+    grid,
+    isAnimating,
+    isMouseDown,
+    setGrid,
+    setStartNode,
+    setTargetNode,
+    startNode,
+    targetNode,
+  ]);
 
   return {
     handleCellMouseDown,
