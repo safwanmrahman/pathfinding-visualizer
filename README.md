@@ -2,7 +2,13 @@
 
 An interactive pathfinding sandbox for comparing how BFS, DFS, Dijkstra, and A* behave on the same grid. You can draw walls, add weighted terrain, drag the start and target nodes, generate mazes, and watch each algorithm explore step by step.
 
-## Demo
+## Live Demo
+
+[**Try the Pathfinding Visualizer**](https://pathfinding-visualizer-lovat.vercel.app/)
+
+Explore the deployed app to compare algorithms, build test cases, and review the UI experience without running the project locally.
+
+## Local Demo
 
 - Local demo: run `npm run dev`
 - Production build output: `dist/`
