@@ -61,7 +61,9 @@ export function UtilitySidebar({
               <p className="panel-kicker">Status</p>
               <h3>Current run feedback</h3>
             </div>
-            <p className="status-message">{statusMessage}</p>
+            <p className="status-message" aria-live="polite">
+              {statusMessage}
+            </p>
           </div>
         </article>
 

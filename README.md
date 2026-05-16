@@ -4,9 +4,8 @@ An interactive pathfinding sandbox for comparing how BFS, DFS, Dijkstra, and A* 
 
 ## Demo
 
-- Live demo: coming soon
 - Local demo: run `npm run dev`
-- Demo placeholder: add a short GIF or hosted recording showing wall drawing, weighted nodes, and one full algorithm run
+- Production build output: `dist/`
 
 ## Tech Stack
 
@@ -18,6 +17,7 @@ An interactive pathfinding sandbox for comparing how BFS, DFS, Dijkstra, and A* 
 | Testing | Node test runner via `node --test` |
 | Styling approach | Handwritten CSS with CSS custom properties and responsive layout rules |
 | Rendering approach | DOM-based grid using React components, not canvas |
+| Deployment shape | Static frontend with relative asset paths for root or subpath hosting |
 | Algorithms | BFS, DFS, Dijkstra, and A* |
 | Grid data model | 20x40 matrix of node objects with start, target, wall, weight, visited, and path flags |
 | Maze/data utilities | Grid creation, maze generation, node editing, import/export serialization, and board validation helpers |
@@ -135,9 +135,11 @@ src/
 ## Safety and Validation Notes
 
 - No secrets or environment credentials are stored in the repo.
+- No environment variables are required for local or production builds.
 - Imported board JSON is parsed defensively and validated for version, size, node positions, and shape before being applied.
 - Invalid JSON import attempts fail with user-facing error messages instead of mutating app state.
 - The app uses standard React rendering with no unsafe HTML injection.
+- The app does not use client-side routing, so deployment does not require SPA rewrite rules for deep links.
 
 ## Getting Started
 
@@ -157,6 +159,8 @@ npm run build
 npm run preview
 ```
 
+There is currently no dedicated lint script configured in `package.json`.
+
 ## Testing
 
 The project includes unit tests for:
@@ -168,3 +172,43 @@ The project includes unit tests for:
 - board import/export validation
 
 CI also runs `npm test` and `npm run build` on pushes and pull requests.
+
+## Production Readiness Notes
+
+- Vite is configured with a relative `base` path in [vite.config.js](/Users/safwanrahman/Downloads/Projects/pathfinding-visualizer/vite.config.js), so built assets load correctly from root domains and subpaths such as GitHub Pages repositories.
+- `index.html` and `public/site.webmanifest` use relative asset references, which avoids broken favicon and manifest URLs in subpath deployments.
+- The grid uses pointer events instead of mouse-only events, so drawing and dragging work on touch devices as well as desktop.
+- Auto-play batches large visit animations into fewer React updates to keep the UI responsive during heavier runs without changing algorithm results.
+
+## Deployment
+
+The app is a static Vite build. Any host that can serve the `dist/` folder will work.
+
+### Vercel
+
+1. Import the repository into Vercel.
+2. Use the default Vite settings:
+   - Build command: `npm run build`
+   - Output directory: `dist`
+3. Deploy. No environment variables are needed.
+
+### Netlify
+
+1. Create a new site from the repository.
+2. Configure:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+3. Deploy. No redirect file is required because the app does not use client-side routes.
+
+### GitHub Pages
+
+1. Build the app with `npm run build`.
+2. Publish the contents of `dist/` to your Pages branch or Pages artifact.
+3. Because the Vite base path is relative, the built app works both at `https://<user>.github.io/<repo>/` and when opened from other subpaths.
+
+### Local production preview
+
+```bash
+npm run build
+npm run preview
+```

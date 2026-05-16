@@ -197,6 +197,7 @@ input[type='range'] {
 .workspace-panel {
   border-radius: var(--radius-xl);
   padding: 1.15rem;
+  min-width: 0;
 }
 
 .controls-panel,
@@ -672,6 +673,7 @@ input[type='range'] {
   align-self: start;
   padding-bottom: 1rem;
   position: relative;
+  min-width: 0;
 }
 
 .board-panel::after {
@@ -724,11 +726,15 @@ input[type='range'] {
 
 .board-scroll {
   display: block;
+  width: 100%;
   height: auto;
   max-height: none;
   min-height: 0;
   overflow: visible;
   padding: 0;
+  min-width: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .grid {
@@ -741,6 +747,7 @@ input[type='range'] {
   border-radius: calc(var(--radius-lg) - 2px);
   background: var(--grid-line);
   user-select: none;
+  touch-action: none;
 }
 
 .cell {
@@ -751,6 +758,7 @@ input[type='range'] {
   border-radius: 0;
   background: var(--cell);
   transition: transform var(--transition), background var(--transition), box-shadow var(--transition);
+  touch-action: none;
 }
 
 .cell:hover {

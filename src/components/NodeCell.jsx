@@ -33,8 +33,8 @@ function NodeCellComponent({ node, onMouseDown, onMouseEnter }) {
     <button
       type="button"
       className={getCellClasses(node)}
-      onMouseDown={() => onMouseDown(node.row, node.col)}
-      onMouseEnter={() => onMouseEnter(node.row, node.col)}
+      onPointerDown={() => onMouseDown(node.row, node.col)}
+      onPointerEnter={() => onMouseEnter(node.row, node.col)}
       aria-label={getCellLabel(node)}
       role="gridcell"
       tabIndex={-1}

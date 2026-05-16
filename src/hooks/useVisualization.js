@@ -4,6 +4,8 @@ import { DEFAULT_STATS, PATH_DELAY_MS, VISIT_DELAY_MS } from '../constants';
 import { resetSearchState } from '../grid';
 import { createFrames, createRunSummary } from '../utils/runSummary';
 
+const MAX_AUTO_ANIMATION_UPDATES = 180;
+
 export function useVisualization({ grid, setGrid, startNode, targetNode, setStatusMessage, speedMultiplier }) {
   const animationRunIdRef = useRef(0);
   const pendingSleepsRef = useRef(new Set());
@@ -42,29 +44,47 @@ export function useVisualization({ grid, setGrid, startNode, targetNode, setStat
     }
   }
 
-  function applyFrame(frame) {
+  function applyFrames(frames) {
+    if (frames.length === 0) {
+      return;
+    }
+
     setGrid((currentGrid) => {
-      const currentRow = currentGrid[frame.row];
-      const currentNode = currentRow[frame.col];
+      let nextGrid = currentGrid;
+      const clonedRows = new Set();
 
-      if ((frame.type === 'visit' && currentNode.isVisited) || (frame.type === 'path' && currentNode.isPath)) {
-        return currentGrid;
+      for (const frame of frames) {
+        const currentRow = nextGrid[frame.row];
+        const currentNode = currentRow[frame.col];
+
+        if ((frame.type === 'visit' && currentNode.isVisited) || (frame.type === 'path' && currentNode.isPath)) {
+          continue;
+        }
+
+        if (nextGrid === currentGrid) {
+          nextGrid = [...currentGrid];
+        }
+
+        let nextRow = nextGrid[frame.row];
+
+        if (!clonedRows.has(frame.row)) {
+          nextRow = [...currentRow];
+          nextGrid[frame.row] = nextRow;
+          clonedRows.add(frame.row);
+        }
+
+        const nextNode = { ...nextRow[frame.col] };
+
+        if (frame.type === 'visit') {
+          nextNode.isVisited = true;
+        }
+
+        if (frame.type === 'path') {
+          nextNode.isPath = true;
+        }
+
+        nextRow[frame.col] = nextNode;
       }
-
-      const nextGrid = [...currentGrid];
-      const nextRow = [...currentRow];
-      const nextNode = { ...currentNode };
-
-      if (frame.type === 'visit') {
-        nextNode.isVisited = true;
-      }
-
-      if (frame.type === 'path') {
-        nextNode.isPath = true;
-      }
-
-      nextRow[frame.col] = nextNode;
-      nextGrid[frame.row] = nextRow;
 
       return nextGrid;
     });
@@ -91,17 +111,39 @@ export function useVisualization({ grid, setGrid, startNode, targetNode, setStat
     );
   }
 
+  function getBatchSize(frameType, totalFrames) {
+    if (frameType === 'path') {
+      return 1;
+    }
+
+    return Math.max(1, Math.ceil(totalFrames / MAX_AUTO_ANIMATION_UPDATES));
+  }
+
   async function animateSearch(frames, runId) {
     const visitDelay = Math.max(4, Math.round(VISIT_DELAY_MS / speedMultiplier));
     const pathDelay = Math.max(10, Math.round(PATH_DELAY_MS / speedMultiplier));
+    let frameIndex = 0;
 
-    for (const frame of frames) {
+    while (frameIndex < frames.length) {
       if (animationRunIdRef.current !== runId) {
         return false;
       }
 
-      applyFrame(frame);
-      await sleep(frame.type === 'visit' ? visitDelay : pathDelay);
+      const frameType = frames[frameIndex].type;
+      const batchSize = getBatchSize(frameType, frames.length);
+      const batch = [];
+
+      while (
+        frameIndex < frames.length &&
+        frames[frameIndex].type === frameType &&
+        batch.length < batchSize
+      ) {
+        batch.push(frames[frameIndex]);
+        frameIndex += 1;
+      }
+
+      applyFrames(batch);
+      await sleep((frameType === 'visit' ? visitDelay : pathDelay) * batch.length);
     }
 
     return true;
@@ -129,7 +171,7 @@ export function useVisualization({ grid, setGrid, startNode, targetNode, setStat
       return;
     }
 
-    applyFrame(nextFrame);
+    applyFrames([nextFrame]);
     const nextIndex = preparedRun.nextIndex + 1;
 
     if (nextIndex >= preparedRun.frames.length) {

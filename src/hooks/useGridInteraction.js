@@ -28,13 +28,20 @@ export function useGridInteraction({
   const [dragMode, setDragMode] = useState(null);
 
   useEffect(() => {
-    function handleMouseUp() {
+    function releaseInteraction() {
       setIsMouseDown(false);
       setDragMode(null);
     }
 
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => window.removeEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseup', releaseInteraction);
+    window.addEventListener('pointerup', releaseInteraction);
+    window.addEventListener('pointercancel', releaseInteraction);
+
+    return () => {
+      window.removeEventListener('mouseup', releaseInteraction);
+      window.removeEventListener('pointerup', releaseInteraction);
+      window.removeEventListener('pointercancel', releaseInteraction);
+    };
   }, []);
 
   const handleCellMouseDown = useCallback((row, col) => {
